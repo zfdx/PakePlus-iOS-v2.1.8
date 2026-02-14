@@ -1,88 +1,470 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>激活码生成器 · 受保护</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            margin: 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        h2, h3 {
+            text-align: center;
+            color: #333;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 1.6rem;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 6px;
+        }
+
+        .quick-selectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+
+        .selector {
+            flex: 1 0 auto;
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 10px 12px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            min-width: 70px;
+            text-align: center;
+            touch-action: manipulation;
+        }
+
+        .selector:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .selector.active {
+            background: #667eea;
+            color: white;
+            border-color: #5a67d8;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 24px 0 16px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 480px) {
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .quick-selectors {
+                gap: 6px;
+            }
+            .selector {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+        }
+
+        button {
+            flex: 1 1 auto;
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 16px 12px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+            min-width: 120px;
+            touch-action: manipulation;
+        }
+
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .result-area {
+            background: #f7fafc;
+            border-radius: 20px;
+            padding: 18px 14px;
+            border: 2px dashed #cbd5e0;
+            text-align: center;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #2d3748;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 自定义轻提示样式 */
+        .copy-toast {
+            margin: 12px 0;  /* 上下间距调整为12px，使其紧贴按钮下方 */
+            padding: 10px 16px;
+            border-radius: 40px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: white;
+            transition: opacity 0.2s;
+        }
+        .copy-toast.success {
+            background: #48bb78;
+        }
+        .copy-toast.error {
+            background: #e53e3e;
+        }
+        .copy-toast.hidden {
+            display: none;
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                padding: 20px 16px;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+            button {
+                padding: 14px 10px;
+                font-size: 1rem;
+            }
+            .selector {
+                font-size: 0.75rem;
+                padding: 8px 4px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="card">
+        <div id="passwordSection">
+            <h3>🔒 请输入访问密码</h3>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="密码" autofocus>
             </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
+            <div class="button-group" style="margin-top:10px;">
+                <button id="passwordSubmit">进入</button>
             </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+            <div id="passwordError" class="error-message"></div>
+        </div>
+
+        <div id="generatorSection" class="hidden">
+            <h2>🔐 激活码生成器</h2>
+
+            <div class="input-group">
+                <label>ID <span>(整数)</span></label>
+                <input type="number" id="idInput" placeholder="请输入ID">
+            </div>
+
+            <div class="input-group">
+                <label>📅 快捷有效期</label>
+                <div class="quick-selectors" id="quickSelectors">
+                    <button class="selector" data-days="1">测试1天</button>
+                    <button class="selector" data-days="7">周卡7天</button>
+                    <button class="selector" data-days="30">月卡30天</button>
+                    <button class="selector" data-days="90">季卡90天</button>
+                    <button class="selector" data-days="365">年卡365天</button>
+                    <button class="selector" data-days="0">永久卡</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>✏️ 自定义天数 <span>(0 表示永久)</span></label>
+                <input type="number" id="daysInput" placeholder="输入天数" min="0" value="1">
+                <div class="hint">天数将转换为毫秒，附加在激活码中；0 为永久无期限</div>
+            </div>
+
+            <!-- 仅剩生成按钮 -->
+            <div class="button-group">
+                <button id="generateBtn">✨ 生成激活码</button>
+            </div>
+
+            <!-- 轻提示已移动到按钮下方，结果区域上方 -->
+            <div id="copyToast" class="copy-toast hidden"></div>
+
+            <div class="result-area" id="resultDisplay">✨ 点击【生成激活码】</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- 固定参数 ----------
+            const KEY_STRING = "Format2044153997";
+            const KEY = CryptoJS.enc.Utf8.parse(KEY_STRING);
+            const FIXED_KEY = 9411741;
+
+            // ---------- 获取元素 ----------
+            const passwordSection = document.getElementById('passwordSection');
+            const generatorSection = document.getElementById('generatorSection');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordSubmit = document.getElementById('passwordSubmit');
+            const passwordError = document.getElementById('passwordError');
+
+            const idInput = document.getElementById('idInput');
+            const daysInput = document.getElementById('daysInput');
+            const resultDisplay = document.getElementById('resultDisplay');
+            const generateBtn = document.getElementById('generateBtn');
+            const selectorButtons = document.querySelectorAll('.selector');
+            const copyToast = document.getElementById('copyToast');
+
+            let currentCode = '';
+
+            // ---------- 密码验证 ----------
+            const CORRECT_PASSWORD = "199612";
+
+            passwordSubmit.addEventListener('click', function() {
+                const entered = passwordInput.value;
+                if (entered === CORRECT_PASSWORD) {
+                    passwordSection.classList.add('hidden');
+                    generatorSection.classList.remove('hidden');
+                    passwordError.textContent = '';
+                    idInput.focus();
+                    // 进入后重置显示提示（不自动生成）
+                    resultDisplay.textContent = '✨ 点击【生成激活码】';
+                    currentCode = '';
+                } else {
+                    passwordError.textContent = '❌ 密码错误，请重新输入';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            });
+
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    passwordSubmit.click();
+                }
+            });
+
+            // ---------- 生成逻辑 ----------
+            function generateActivationCode() {
+                const idStr = idInput.value.trim();
+                if (idStr === '') {
+                    return '';
+                }
+
+                const idVal = parseInt(idStr, 10);
+                if (isNaN(idVal)) {
+                    return '';
+                }
+
+                let daysVal = daysInput.value.trim() === '' ? 0 : parseInt(daysInput.value, 10);
+                if (isNaN(daysVal) || daysVal < 0) {
+                    daysVal = 0;
+                }
+
+                const i3 = Math.floor(idVal / 2) + FIXED_KEY;
+                const i3Hex = i3.toString(16);
+
+                let plainText = i3Hex;
+                if (daysVal > 0) {
+                    const millis = daysVal * 86400000;
+                    plainText = i3Hex + 'z' + millis;
+                }
+
+                const encrypted = CryptoJS.AES.encrypt(plainText, KEY, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+            }
+
+            // ---------- 自定义轻提示（替代alert）----------
+            function showToast(message, isError = false) {
+                copyToast.textContent = message;
+                copyToast.classList.remove('hidden', 'success', 'error');
+                copyToast.classList.add(isError ? 'error' : 'success');
+                // 2秒后自动隐藏
+                setTimeout(() => {
+                    copyToast.classList.add('hidden');
+                }, 2000);
+            }
+
+            // ---------- 复制到剪贴板函数 ----------
+            function copyToClipboard(text) {
+                return navigator.clipboard.writeText(text);
+            }
+
+            // ---------- 更新结果并自动复制 ----------
+            function updateResultAndCopy() {
+                const code = generateActivationCode();
+                currentCode = code;
+                if (code) {
+                    resultDisplay.textContent = code;
+                    // 自动复制
+                    copyToClipboard(code)
+                        .then(() => {
+                            showToast('激活码已复制');   // ✅ 成功提示：激活码已复制
+                        })
+                        .catch(() => {
+                            showToast('复制失败，请手动复制', true);
+                        });
+                } else {
+                    resultDisplay.textContent = '请输入有效ID后生成';
+                    // 没有生成有效码，不清除之前的toast，也不复制
+                }
+            }
+
+            generateBtn.addEventListener('click', updateResultAndCopy);
+
+            // ---------- 高亮管理 ----------
+            function removeActiveClass() {
+                selectorButtons.forEach(btn => btn.classList.remove('active'));
+            }
+
+            function setActiveByDay(dayValue) {
+                removeActiveClass();
+                if (dayValue === undefined || dayValue === null) return;
+                const numericDay = typeof dayValue === 'number' ? dayValue : parseInt(dayValue, 10);
+                if (isNaN(numericDay)) return;
+
+                selectorButtons.forEach(btn => {
+                    const btnDay = parseInt(btn.dataset.days, 10);
+                    if (btnDay === numericDay) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            function syncActiveFromInput() {
+                let rawValue = daysInput.value.trim();
+                if (rawValue === '') {
+                    setActiveByDay(0);
+                } else {
+                    const num = parseInt(rawValue, 10);
+                    if (!isNaN(num) && num >= 0) {
+                        setActiveByDay(num);
+                    } else {
+                        removeActiveClass();
+                    }
+                }
+            }
+
+            daysInput.addEventListener('input', syncActiveFromInput);
+
+            // 快捷按钮仅设置天数和高亮，不再自动生成
+            selectorButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const days = this.dataset.days;
+                    daysInput.value = days;
+                    syncActiveFromInput();
+                });
+            });
+
+            // 按回车键触发生成按钮（同点击效果）
+            idInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateBtn.click();
+                }
+            });
+
+            // ---------- 初始化默认值：测试1天，仅显示提示 ----------
+            daysInput.value = '1';
+            setActiveByDay(1);
+            resultDisplay.textContent = '✨ 点击【生成激活码】';
+        })();
+    </script>
+</body>
 </html>
