@@ -1,88 +1,560 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>激活码生成器 · 绿野护眼</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        /* ---------- 全局重置与护眼绿色主题 (所有紫色调已移除) ---------- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* 柔和护眼绿渐变 — 低饱和度、低蓝光 */
+            background: linear-gradient(145deg, #c0ddb0 0%, #a0c89a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            margin: 0;
+        }
+
+        .card {
+            /* 半透明柔白底色，略带绿调 */
+            background: rgba(245, 255, 240, 0.9);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px rgba(40, 90, 40, 0.25);
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(160, 200, 140, 0.3);
+        }
+
+        h2, h3 {
+            text-align: center;
+            color: #1e4a2e;        /* 深墨绿 */
+            margin: 0 0 20px 0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 1.6rem;
+            text-shadow: 0 2px 4px rgba(200, 230, 180, 0.5);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: #256635;
+        }
+
+        .input-group {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: #1e562e;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #b8d9b0;
+            border-radius: 24px;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: #ffffffec;
+            -webkit-appearance: none;
+            appearance: none;
+            color: #1b3b1b;
+        }
+
+        input:focus {
+            border-color: #4caf50;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
+            background: #ffffff;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #3d6b3d;
+            margin-top: 8px;
+            padding-left: 10px;
+        }
+
+        .quick-selectors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+
+        .selector {
+            flex: 1 0 auto;
+            background: #dcf2d0;        /* 浅嫩绿 */
+            color: #1d4f1d;
+            padding: 10px 12px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            min-width: 70px;
+            text-align: center;
+            touch-action: manipulation;
+            box-shadow: 0 4px 8px rgba(90, 140, 70, 0.1);
+        }
+
+        .selector:hover {
+            background: #c0e0b0;
+            transform: translateY(-2px);
+            border-color: #a0c090;
+        }
+
+        .selector.active {
+            background: #2a7a3a;          /* 森林绿 */
+            color: white;
+            border-color: #1f662f;
+            box-shadow: 0 6px 12px rgba(40, 110, 40, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 24px 0 16px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 480px) {
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .quick-selectors {
+                gap: 6px;
+            }
+            .selector {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+        }
+
+        button {
+            flex: 1 1 auto;
+            background: #2f9e44;          /* 活力绿 */
+            border: none;
+            color: white;
+            padding: 16px 12px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+            min-width: 120px;
+            touch-action: manipulation;
+            box-shadow: 0 10px 15px -8px #2d6a2d;
+        }
+
+        button:hover {
+            background: #1f7b2e;
+            transform: translateY(-3px);
+            box-shadow: 0 16px 24px -8px #1f5a1f;
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 10px -4px #1f5a1f;
+        }
+
+        /* 激活码展示区域 */
+        .result-area {
+            background: #ecfbe8;
+            border-radius: 28px;
+            padding: 18px 14px;
+            border: 2px dashed #7fb07f;
+            text-align: center;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: #1a472a;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+            box-shadow: inset 0 2px 6px #d0e8d0;
+        }
+
+        .error-message {
+            color: #c44536;           /* 保留暖红色，足够显眼 */
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 24px;
+            font-weight: 500;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* 动态提示/时间区域 — 护眼浅绿基调 */
+        .copy-toast {
+            margin: 12px 0;
+            padding: 10px 16px;
+            border-radius: 40px;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            background: #daf0d0;          /* 柔和绿 */
+            color: #1d4f1d;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            border: 1px solid #b0d0a0;
+            box-shadow: 0 4px 8px rgba(130, 170, 100, 0.15);
+        }
+
+        .copy-toast.success {
+            background: #409c4e;          /* 深一点的绿，保持对比 */
+            color: white;
+            border-color: #2f7a3a;
+        }
+
+        .copy-toast.error {
+            background: #d9534f;           /* 柔红，但保留 */
+            color: white;
+            border-color: #b13b37;
+        }
+
+        /* 微调密码页面风格一致 */
+        #passwordSection input {
+            background: #f4fff0;
+        }
+
+        #passwordSubmit {
+            background: #3a9445;
+        }
+
+        #passwordSubmit:hover {
+            background: #2a7a32;
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                padding: 20px 16px;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+            button {
+                padding: 14px 10px;
+                font-size: 1rem;
+            }
+            .selector {
+                font-size: 0.75rem;
+                padding: 8px 4px;
+            }
+        }
+
+        /* 美化id输入框的增减按钮 (隐藏默认箭头，保持干净) */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            opacity: 0.6;
+            height: 24px;
+        }
+        /* 火狐 */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div id="passwordSection">
+            <h3>🔒 请输入访问密码</h3>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="密码" autofocus>
             </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
+            <div class="button-group" style="margin-top:10px;">
+                <button id="passwordSubmit">进入</button>
             </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+            <div id="passwordError" class="error-message"></div>
+        </div>
+
+        <div id="generatorSection" class="hidden">
+            <h2>🌿 激活码生成器</h2>
+
+            <div class="input-group">
+                <label>机器码 <span>(ID)</span></label>
+                <input type="number" id="idInput" placeholder="例如 10086">
+            </div>
+
+            <div class="input-group">
+                <label>📅 快捷有效期</label>
+                <div class="quick-selectors" id="quickSelectors">
+                    <button class="selector" data-days="1">测试1天</button>
+                    <button class="selector" data-days="7">周卡7天</button>
+                    <button class="selector" data-days="30">月卡30天</button>
+                    <button class="selector" data-days="90">季卡90天</button>
+                    <button class="selector" data-days="365">年卡365天</button>
+                    <button class="selector" data-days="0">永久卡</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>✏️ 自定义天数 </label>
+                <input type="number" id="daysInput" placeholder="输入天数" min="0" value="1">
+                <div class="hint">tip：0表示无限期</div>
+            </div>
+
+            <div class="button-group">
+                <button id="generateBtn">✨ 生成激活码</button>
+            </div>
+
+            <!-- 动态区域：显示时间 或 复制反馈 (3秒切换) -->
+            <div id="copyToast" class="copy-toast hidden"></div>
+
+            <div class="result-area" id="resultDisplay">✨ 点击【生成激活码】</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- 加密固定参数 ----------
+            const KEY_STRING = "Format2044153997";
+            const KEY = CryptoJS.enc.Utf8.parse(KEY_STRING);
+            const FIXED_KEY = 9411741;
+
+            // ---------- DOM 元素 ----------
+            const passwordSection = document.getElementById('passwordSection');
+            const generatorSection = document.getElementById('generatorSection');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordSubmit = document.getElementById('passwordSubmit');
+            const passwordError = document.getElementById('passwordError');
+            const idInput = document.getElementById('idInput');
+            const daysInput = document.getElementById('daysInput');
+            const resultDisplay = document.getElementById('resultDisplay');
+            const generateBtn = document.getElementById('generateBtn');
+            const selectorButtons = document.querySelectorAll('.selector');
+            const copyToast = document.getElementById('copyToast');
+
+            // ---------- 状态变量 (时间/提示切换) ----------
+            let currentMode = 'time';           // 'time' 或 'toast'
+            let timeInterval = null;             // 时钟刷新句柄
+            let restoreTimer = null;              // 3秒恢复定时器
+
+            // ---------- 工具函数：格式化当前时间 (YYYY-MM-DD HH:MM:SS) ----------
+            function formatNow() {
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const seconds = String(d.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+
+            // ---------- 更新时间显示 (仅当模式为time时更新内容) ----------
+            function updateTimeDisplay() {
+                if (currentMode === 'time') {
+                    copyToast.textContent = `🕒 当前时间：${formatNow()}`;
+                }
+            }
+
+            // ---------- 停止所有定时器 (时钟 + 恢复定时器) ----------
+            function stopAllTimers() {
+                if (timeInterval) {
+                    clearInterval(timeInterval);
+                    timeInterval = null;
+                }
+                if (restoreTimer) {
+                    clearTimeout(restoreTimer);
+                    restoreTimer = null;
+                }
+            }
+
+            // ---------- 启动时钟 (只有处于time模式才会真正刷新) ----------
+            function startClock() {
+                stopAllTimers();
+                updateTimeDisplay();                    // 立即显示
+                timeInterval = setInterval(updateTimeDisplay, 1000);
+            }
+
+            // ---------- 恢复时间显示模式 (3秒后调用) ----------
+            function restoreTimeMode() {
+                copyToast.classList.remove('success', 'error');
+                currentMode = 'time';
+                updateTimeDisplay();
+                restoreTimer = null;
+                if (!timeInterval) {
+                    startClock();
+                }
+            }
+
+            // ---------- 显示临时提示 (覆盖时间) 并设置3秒返回 ----------
+            function showTemporaryMessage(message, isError = false) {
+                if (restoreTimer) clearTimeout(restoreTimer);
+                currentMode = 'toast';
+                copyToast.textContent = message;
+                copyToast.classList.remove('success', 'error');
+                copyToast.classList.add(isError ? 'error' : 'success');
+                restoreTimer = setTimeout(() => {
+                    restoreTimeMode();
+                }, 3000);
+            }
+
+            // ---------- 密码验证 (正确后显示生成器，启动时钟) ----------
+            const CORRECT_PASSWORD = "199612";
+
+            passwordSubmit.addEventListener('click', function() {
+                const entered = passwordInput.value;
+                if (entered === CORRECT_PASSWORD) {
+                    passwordSection.classList.add('hidden');
+                    generatorSection.classList.remove('hidden');
+                    passwordError.textContent = '';
+
+                    copyToast.classList.remove('hidden');
+                    currentMode = 'time';
+                    copyToast.classList.remove('success', 'error');
+                    startClock();
+
+                    idInput.focus();
+                    resultDisplay.textContent = '🌱 输入ID，点击生成';
+                } else {
+                    passwordError.textContent = '❌ 密码错误，请重新输入';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            });
+
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    passwordSubmit.click();
+                }
+            });
+
+            // ---------- 激活码生成函数 ----------
+            function generateActivationCode() {
+                const idStr = idInput.value.trim();
+                if (idStr === '') return '';
+
+                const idVal = parseInt(idStr, 10);
+                if (isNaN(idVal)) return '';
+
+                let daysVal = daysInput.value.trim() === '' ? 0 : parseInt(daysInput.value, 10);
+                if (isNaN(daysVal) || daysVal < 0) daysVal = 0;
+
+                const i3 = Math.floor(idVal / 2) + FIXED_KEY;
+                const i3Hex = i3.toString(16);
+
+                let plainText = i3Hex;
+                if (daysVal > 0) {
+                    const millis = daysVal * 86400000;
+                    plainText = i3Hex + 'z' + millis;
+                }
+
+                const encrypted = CryptoJS.AES.encrypt(plainText, KEY, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+            }
+
+            // ---------- 复制到剪贴板 ----------
+            function copyToClipboard(text) {
+                return navigator.clipboard.writeText(text);
+            }
+
+            // ---------- 生成并复制 (点击主按钮) ----------
+            function updateResultAndCopy() {
+                const code = generateActivationCode();
+                if (code) {
+                    resultDisplay.textContent = code;
+                    copyToClipboard(code)
+                        .then(() => {
+                            showTemporaryMessage('✅ 激活码已复制', false);
+                        })
+                        .catch(() => {
+                            showTemporaryMessage('❌ 复制失败，请手动复制', true);
+                        });
+                } else {
+                    resultDisplay.textContent = '⚠️ 请输入有效ID后生成';
+                }
+            }
+
+            generateBtn.addEventListener('click', updateResultAndCopy);
+
+            // 回车触发生成
+            idInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateBtn.click();
+                }
+            });
+
+            // ---------- 高亮管理 (快捷天数) ----------
+            function removeActiveClass() {
+                selectorButtons.forEach(btn => btn.classList.remove('active'));
+            }
+
+            function setActiveByDay(dayValue) {
+                removeActiveClass();
+                if (dayValue === undefined || dayValue === null) return;
+                const numericDay = typeof dayValue === 'number' ? dayValue : parseInt(dayValue, 10);
+                if (isNaN(numericDay)) return;
+
+                selectorButtons.forEach(btn => {
+                    const btnDay = parseInt(btn.dataset.days, 10);
+                    if (btnDay === numericDay) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            function syncActiveFromInput() {
+                let rawValue = daysInput.value.trim();
+                if (rawValue === '') {
+                    setActiveByDay(0);
+                } else {
+                    const num = parseInt(rawValue, 10);
+                    if (!isNaN(num) && num >= 0) {
+                        setActiveByDay(num);
+                    } else {
+                        removeActiveClass();
+                    }
+                }
+            }
+
+            daysInput.addEventListener('input', syncActiveFromInput);
+
+            // 快捷按钮仅修改天数和高亮
+            selectorButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const days = this.dataset.days;
+                    daysInput.value = days;
+                    syncActiveFromInput();
+                });
+            });
+
+            // 初始化默认1天高亮
+            daysInput.value = '1';
+            setActiveByDay(1);
+        })();
+    </script>
+</body>
 </html>
