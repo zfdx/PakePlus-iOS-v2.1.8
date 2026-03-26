@@ -1,99 +1,198 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>激活码生成器 · 绿野护眼</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>网盘助手 · 激活码工具</title>
+    <!-- CryptoJS 用于激活码加密 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        /* ---------- 全局重置与护眼绿色主题 (所有紫色调已移除) ---------- */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            /* 柔和护眼绿渐变 — 低饱和度、低蓝光 */
-            background: linear-gradient(145deg, #c0ddb0 0%, #a0c89a 100%);
+            background: linear-gradient(135deg, #f5f9ff 0%, #eef2f8 100%);
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 16px;
-            margin: 0;
+            justify-content: center;
+            padding: 2rem 1.5rem;
         }
 
+        /* 主容器卡片 */
         .card {
-            /* 半透明柔白底色，略带绿调 */
-            background: rgba(245, 255, 240, 0.9);
-            border-radius: 32px;
-            box-shadow: 0 25px 45px rgba(40, 90, 40, 0.25);
-            padding: 24px 20px;
+            max-width: 1000px;
             width: 100%;
-            max-width: 500px;
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(160, 200, 140, 0.3);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 2.2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.03);
+            padding: 2rem 2rem 2.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
 
-        h2, h3 {
+        /* 选择面板通用 */
+        .platform-selector {
             text-align: center;
-            color: #1e4a2e;        /* 深墨绿 */
-            margin: 0 0 20px 0;
+        }
+
+        .selector-title {
+            font-size: 1.8rem;
+            font-weight: 650;
+            background: linear-gradient(120deg, #1f4870, #2b6a9f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .selector-sub {
+            color: #4a627a;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .platform-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .platform-btn {
+            background: white;
+            border: none;
+            padding: 1rem 2.2rem;
+            border-radius: 3rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .platform-btn.quark { background: #ffffff; color: #2c6e9e; border-left: 5px solid #2c9b6e; }
+        .platform-btn.feijipan { background: #ffffff; color: #e67e22; border-left: 5px solid #e67e22; }
+        .platform-btn.activation { background: #ffffff; color: #2d6a4f; border-left: 5px solid #409c4e; }
+
+        .platform-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 25px -12px rgba(0, 0, 0, 0.2);
+        }
+        .platform-btn:active { transform: translateY(1px); }
+
+        /* 面板头部 */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+        .panel-title {
             font-size: 1.6rem;
-            text-shadow: 0 2px 4px rgba(200, 230, 180, 0.5);
+            font-weight: 640;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-btn {
+            background: #f0f4f9;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            color: #3a5f7a;
+        }
+        .back-btn:hover { background: #e2e9f2; transform: translateX(-2px); }
+        .sub {
+            color: #4a627a;
+            margin-top: 0.2rem;
+            margin-bottom: 1.8rem;
+            font-size: 0.9rem;
+            border-left: 3px solid #3b9eff;
+            padding-left: 0.9rem;
+            background: rgba(59, 158, 255, 0.05);
+            border-radius: 0 12px 12px 0;
         }
 
-        h3 {
-            font-size: 1.4rem;
-            margin-bottom: 16px;
-            color: #256635;
+        /* 网盘按钮网格 */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.2rem;
+            margin: 1.5rem 0 1rem;
         }
+        .copy-btn {
+            background: #ffffff;
+            border: none;
+            padding: 1rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 1.05rem;
+            font-weight: 540;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            color: #1e3a5f;
+        }
+        .copy-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.15); border-color: #3b9eff; }
+        .copy-btn:active { transform: translateY(1px); }
+        .copy-btn.copied-flash { background: #e0f0fe; color: #0f5c8a; box-shadow: 0 0 0 2px #3b9eff60; }
+        .btn-icon { font-size: 1.3rem; }
 
+        /* ---------- 激活码工具 专用样式 (保持护眼风格但适配当前卡片) ---------- */
+        .activation-container {
+            margin-top: 0.5rem;
+        }
         .input-group {
             margin-bottom: 22px;
         }
-
-        label {
+        .input-group label {
             display: block;
             font-size: 0.9rem;
+            font-weight: 600;
             color: #1e562e;
             margin-bottom: 8px;
-            font-weight: 600;
             letter-spacing: 0.3px;
         }
-
-        input {
+        .input-group input {
             width: 100%;
             padding: 14px 16px;
-            border: 2px solid #b8d9b0;
-            border-radius: 24px;
+            border: 2px solid #cde0d0;
+            border-radius: 28px;
             font-size: 1rem;
-            transition: 0.2s;
             background: #ffffffec;
-            -webkit-appearance: none;
-            appearance: none;
+            transition: 0.2s;
             color: #1b3b1b;
         }
-
-        input:focus {
+        .input-group input:focus {
             border-color: #4caf50;
             outline: none;
-            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
-            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
         }
-
-        .hint {
-            font-size: 0.8rem;
-            color: #3d6b3d;
-            margin-top: 8px;
-            padding-left: 10px;
-        }
-
         .quick-selectors {
             display: flex;
             flex-wrap: wrap;
@@ -101,11 +200,10 @@
             margin-bottom: 8px;
             justify-content: center;
         }
-
         .selector {
             flex: 1 0 auto;
-            background: #dcf2d0;        /* 浅嫩绿 */
-            color: #1d4f1d;
+            background: #ecf6e5;
+            color: #1d5a2d;
             padding: 10px 12px;
             border-radius: 40px;
             font-size: 0.9rem;
@@ -115,73 +213,20 @@
             transition: 0.2s;
             min-width: 70px;
             text-align: center;
-            touch-action: manipulation;
-            box-shadow: 0 4px 8px rgba(90, 140, 70, 0.1);
+            box-shadow: 0 2px 6px rgba(90, 140, 70, 0.1);
         }
-
-        .selector:hover {
-            background: #c0e0b0;
-            transform: translateY(-2px);
-            border-color: #a0c090;
+        .key-selectors .selector {
+            font-size: 0.85rem;
+            padding: 10px 6px;
+            min-width: 100px;
         }
-
+        .selector:hover { background: #d9eacf; transform: translateY(-2px); }
         .selector.active {
-            background: #2a7a3a;          /* 森林绿 */
+            background: #2a7a3a;
             color: white;
             border-color: #1f662f;
-            box-shadow: 0 6px 12px rgba(40, 110, 40, 0.3);
+            box-shadow: 0 4px 12px rgba(40, 110, 40, 0.25);
         }
-
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin: 24px 0 16px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 480px) {
-            .button-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .quick-selectors {
-                gap: 6px;
-            }
-            .selector {
-                padding: 8px 6px;
-                font-size: 0.8rem;
-            }
-        }
-
-        button {
-            flex: 1 1 auto;
-            background: #2f9e44;          /* 活力绿 */
-            border: none;
-            color: white;
-            padding: 16px 12px;
-            border-radius: 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 2px solid transparent;
-            min-width: 120px;
-            touch-action: manipulation;
-            box-shadow: 0 10px 15px -8px #2d6a2d;
-        }
-
-        button:hover {
-            background: #1f7b2e;
-            transform: translateY(-3px);
-            box-shadow: 0 16px 24px -8px #1f5a1f;
-        }
-
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 6px 10px -4px #1f5a1f;
-        }
-
-        /* 激活码展示区域 */
         .result-area {
             background: #ecfbe8;
             border-radius: 28px;
@@ -190,122 +235,167 @@
             text-align: center;
             word-break: break-all;
             font-family: 'Courier New', monospace;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #1a472a;
             min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             line-height: 1.4;
-            box-shadow: inset 0 2px 6px #d0e8d0;
+            margin-top: 18px;
+        }
+        .activation-timebar {
+            background: #eef3ea;
+            border-radius: 60px;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #2b6e3c;
+            margin: 12px 0 8px;
+            font-weight: 500;
+        }
+        .generate-btn-act {
+            background: #2f9e44;
+            border: none;
+            color: white;
+            padding: 14px 18px;
+            border-radius: 48px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 8px 16px -8px #2d6a2d;
+        }
+        .generate-btn-act:hover { background: #1f7b2e; transform: translateY(-2px); }
+        .footer-note {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6f8aa3;
+            border-top: 1px solid #dce5ec;
+            padding-top: 1.2rem;
         }
 
-        .error-message {
-            color: #c44536;           /* 保留暖红色，足够显眼 */
+        /* 统一 Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.96);
+            background: #1e2f3ce6;
+            backdrop-filter: blur(12px);
+            color: #f0f9ff;
+            padding: 10px 24px;
+            border-radius: 60px;
             font-size: 0.9rem;
-            text-align: center;
-            margin-top: 10px;
-            min-height: 24px;
             font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) scale(1); }
+
+        @media (max-width: 620px) {
+            .card { padding: 1.5rem; }
+            .button-grid { grid-template-columns: 1fr; }
+            .platform-btn { padding: 0.8rem 1.4rem; font-size: 1rem; }
+            .selector { padding: 8px 6px; font-size: 0.8rem; }
+            .key-selectors .selector { font-size: 0.75rem; min-width: 80px; }
+            .toast { white-space: normal; max-width: 85vw; text-align: center; }
         }
 
-        .hidden {
-            display: none;
-        }
-
-        /* 动态提示/时间区域 — 护眼浅绿基调 */
-        .copy-toast {
-            margin: 12px 0;
-            padding: 10px 16px;
-            border-radius: 40px;
-            text-align: center;
-            font-size: 0.95rem;
-            font-weight: 500;
-            background: #daf0d0;          /* 柔和绿 */
-            color: #1d4f1d;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            border: 1px solid #b0d0a0;
-            box-shadow: 0 4px 8px rgba(130, 170, 100, 0.15);
-        }
-
-        .copy-toast.success {
-            background: #409c4e;          /* 深一点的绿，保持对比 */
-            color: white;
-            border-color: #2f7a3a;
-        }
-
-        .copy-toast.error {
-            background: #d9534f;           /* 柔红，但保留 */
-            color: white;
-            border-color: #b13b37;
-        }
-
-        /* 微调密码页面风格一致 */
-        #passwordSection input {
-            background: #f4fff0;
-        }
-
-        #passwordSubmit {
-            background: #3a9445;
-        }
-
-        #passwordSubmit:hover {
-            background: #2a7a32;
-        }
-
-        @media (max-width: 360px) {
-            .card {
-                padding: 20px 16px;
-            }
-            h2 {
-                font-size: 1.4rem;
-            }
-            button {
-                padding: 14px 10px;
-                font-size: 1rem;
-            }
-            .selector {
-                font-size: 0.75rem;
-                padding: 8px 4px;
-            }
-        }
-
-        /* 美化id输入框的增减按钮 (隐藏默认箭头，保持干净) */
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            opacity: 0.6;
-            height: 24px;
-        }
-        /* 火狐 */
-        input[type=number] {
-            -moz-appearance: textfield;
+        /* 深色模式适配 */
+        @media (prefers-color-scheme: dark) {
+            body { background: #141e2a; }
+            .card { background: rgba(28, 38, 48, 0.92); border-color: rgba(255,255,255,0.08); }
+            .selector-title { background: linear-gradient(120deg, #7fb9e6, #c0dcf5); background-clip: text; -webkit-background-clip: text; }
+            .selector-sub, .sub { color: #bbd4f0; }
+            .platform-btn { background: #283b48; color: #e5f0fc; border-color: #3f627c; }
+            .platform-btn.quark { border-left-color: #4fc3a0; }
+            .platform-btn.feijipan { border-left-color: #f39c12; }
+            .platform-btn.activation { border-left-color: #6fbf4c; }
+            .copy-btn { background: #283b48; color: #e5f0fc; border-color: #3f627c; }
+            .copy-btn:hover { background: #2f4657; border-color: #5faee3; }
+            .copy-btn.copied-flash { background: #2b6f94; color: white; }
+            .back-btn { background: #253a46; color: #cce6ff; }
+            .footer-note { border-top-color: #2d4a60; color: #98b9d6; }
+            .input-group input { background: #2a3a44; border-color: #4d6b7a; color: #eef4fc; }
+            .selector { background: #2c414e; color: #d4f0d4; }
+            .selector.active { background: #409c4e; color: white; }
+            .result-area { background: #253b3f; border-color: #5f9e6e; color: #d0f0cf; }
+            .activation-timebar { background: #2b4540; color: #c2e0bc; }
+            .generate-btn-act { background: #3dab5a; }
+            .generate-btn-act:hover { background: #2d8a46; }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div id="passwordSection">
-            <h3>🔒 请输入访问密码</h3>
-            <div class="input-group">
-                <input type="password" id="passwordInput" placeholder="密码" autofocus>
-            </div>
-            <div class="button-group" style="margin-top:10px;">
-                <button id="passwordSubmit">进入</button>
-            </div>
-            <div id="passwordError" class="error-message"></div>
+<div class="card" id="app">
+    <!-- 平台选择界面 -->
+    <div id="selectorPanel" class="platform-selector">
+        <div class="selector-title">📦 网盘助手 · 工具箱</div>
+        <div class="selector-sub">选择你要使用的工具</div>
+        <div class="platform-buttons">
+            <button class="platform-btn quark" id="chooseQuark">🌐 夸克网盘</button>
+            <button class="platform-btn feijipan" id="chooseFeijipan">✈️ 小飞机网盘</button>
+            <button class="platform-btn activation" id="chooseActivation">🔐 激活码生成器</button>
         </div>
+        <div class="footer-note">点击按钮进入，一键复制链接 / 生成加密激活码</div>
+    </div>
 
-        <div id="generatorSection" class="hidden">
-            <h2>🌿 激活码生成器</h2>
+    <!-- 夸克网盘面板 -->
+    <div id="quarkPanel" style="display: none;">
+        <div class="panel-header">
+            <div class="panel-title"><span>🌐</span> 夸克网盘 · 分享合集</div>
+            <button class="back-btn" id="backFromQuark">← 切换平台</button>
+        </div>
+        <div class="sub">点击下方按钮，自动复制夸克网盘分享链接</div>
+        <div class="button-grid" id="quarkButtonGrid"></div>
+        <div class="footer-note">🔗 所有链接均为夸克网盘官方分享 · 一键转存</div>
+    </div>
+
+    <!-- 小飞机网盘面板 -->
+    <div id="feijipanPanel" style="display: none;">
+        <div class="panel-header">
+            <div class="panel-title"><span>✈️</span> 小飞机网盘 · 极速分享</div>
+            <button class="back-btn" id="backFromFeijipan">← 切换平台</button>
+        </div>
+        <div class="sub">点击下方按钮，自动复制小飞机网盘分享链接 (下载不限速)</div>
+        <div class="button-grid" id="feijipanButtonGrid"></div>
+        <div class="footer-note">⚡ 小飞机网盘 · 不限速 · 一键转存无上限</div>
+    </div>
+
+    <!-- 激活码生成器面板 -->
+    <div id="activationPanel" style="display: none;">
+        <div class="panel-header">
+            <div class="panel-title"><span>🔐</span> 绿野激活码生成器</div>
+            <button class="back-btn" id="backFromActivation">← 切换平台</button>
+        </div>
+        
+        
+        <div class="activation-container">
+            <!-- 密钥版本 -->
+            <div class="input-group">
+                <label>🔑 密钥版本</label>
+                <div class="key-selectors quick-selectors" id="keySelectorsAct">
+                    <button class="selector" data-key="Format2044153997">旧密钥</button>
+                    <button class="selector" data-key="Franking.369?@66">新密钥</button>
+                </div>
+            </div>
 
             <div class="input-group">
-                <label>机器码 <span>(ID)</span></label>
-                <input type="number" id="idInput" placeholder="例如 10086">
+                <label>机器码 (数字ID)</label>
+                <input type="number" id="machineIdInput" placeholder="例如 10086" autocomplete="off">
             </div>
 
             <div class="input-group">
                 <label>📅 快捷有效期</label>
-                <div class="quick-selectors" id="quickSelectors">
+                <div class="quick-selectors" id="daysQuickSelect">
                     <button class="selector" data-days="1">测试1天</button>
                     <button class="selector" data-days="7">周卡7天</button>
                     <button class="selector" data-days="30">月卡30天</button>
@@ -316,245 +406,271 @@
             </div>
 
             <div class="input-group">
-                <label>✏️ 自定义天数 </label>
-                <input type="number" id="daysInput" placeholder="输入天数" min="0" value="1">
-                <div class="hint">tip：0表示无期限</div>
+                <label>✏️ 自定义天数 (0表示永久)</label>
+                <input type="number" id="customDaysInput" placeholder="输入天数" min="0" value="1">
             </div>
 
-            <div class="button-group">
-                <button id="generateBtn">✨ 生成激活码</button>
-            </div>
-
-            <!-- 动态区域：显示时间 或 复制反馈 (3秒切换) -->
-            <div id="copyToast" class="copy-toast hidden"></div>
-
-            <div class="result-area" id="resultDisplay">✨ 点击【生成激活码】</div>
+            <button id="activationGenerateBtn" class="generate-btn-act">✨ 生成激活码并复制</button>
+            
+            <!-- 时间显示条 + 结果区域 -->
+            <div id="liveClockBar" class="activation-timebar">🕒 当前时间： --:--:--</div>
+            <div class="result-area" id="activationResultDisplay">🌱 输入机器码，点击生成</div>
         </div>
+        
     </div>
+</div>
 
-    <script>
-        (function() {
-            // ---------- 加密固定参数 ----------
-            const KEY_STRING = "Format2044153997";
-            const KEY = CryptoJS.enc.Utf8.parse(KEY_STRING);
-            const FIXED_KEY = 9411741;
+<div id="toastMessage" class="toast">✅ 操作成功</div>
 
-            // ---------- DOM 元素 ----------
-            const passwordSection = document.getElementById('passwordSection');
-            const generatorSection = document.getElementById('generatorSection');
-            const passwordInput = document.getElementById('passwordInput');
-            const passwordSubmit = document.getElementById('passwordSubmit');
-            const passwordError = document.getElementById('passwordError');
-            const idInput = document.getElementById('idInput');
-            const daysInput = document.getElementById('daysInput');
-            const resultDisplay = document.getElementById('resultDisplay');
-            const generateBtn = document.getElementById('generateBtn');
-            const selectorButtons = document.querySelectorAll('.selector');
-            const copyToast = document.getElementById('copyToast');
+<script>
+    // ----------------------------- 网盘部分数据与逻辑 -----------------------------
+    const quarkItems = [
+        { name: "虚空镜像", url: "https://pan.quark.cn/s/41934ceafce3" },
+        { name: "熊熊守护", url: "https://pan.quark.cn/s/1e8ceec49f41" },
+        { name: "叮当瞬移", url: "https://pan.quark.cn/s/016471f43979" },
+        { name: "熊猫守护", url: "https://pan.quark.cn/s/7e1e41058e7b" },
+        { name: "影盒", url: "https://pan.quark.cn/s/8aecbcc802ee" },
+        { name: "大圣归来", url: "https://pan.quark.cn/s/b8d15676cb85" }
+    ];
+    const feijipanItems = [
+        { name: "虚空镜像", url: "https://share.feijipan.com/s/ia2dt4b4" },
+        { name: "叮当瞬移", url: "https://share.feijipan.com/s/mw2dtvAQ" },
+        { name: "影盒", url: "https://share.feijipan.com/s/uy2aQkTs" },
+        { name: "熊猫守护", url: "https://share.feijipan.com/s/2u2dth9v" },
+        { name: "虎虎守护", url: "https://share.feijipan.com/s/hz2dtn4k" },
+        { name: "熊熊守护", url: "https://share.feijipan.com/s/3R2TJTh1" }
+    ];
+    const iconMap = { "虚空镜像": "🌌", "熊熊守护": "🐻‍", "叮当瞬移": "🔔", "熊猫守护": "🐼", "影盒": "📦", "大圣归来": "🐒", "虎虎守护": "🐯" };
+    const defaultIcon = "🔗";
 
-            // ---------- 状态变量 (时间/提示切换) ----------
-            let currentMode = 'time';           // 'time' 或 'toast'
-            let timeInterval = null;             // 时钟刷新句柄
-            let restoreTimer = null;              // 3秒恢复定时器
+    // 全局Toast
+    const toastEl = document.getElementById('toastMessage');
+    let toastTimeout = null;
+    function showToast(message, isSuccess = true) {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        const prefix = isSuccess ? '✅ ' : '⚠️ ';
+        toastEl.textContent = prefix + message;
+        toastEl.classList.add('show');
+        toastTimeout = setTimeout(() => {
+            toastEl.classList.remove('show');
+            toastTimeout = null;
+        }, 2500);
+    }
 
-            // ---------- 工具函数：格式化当前时间 (YYYY-MM-DD HH:MM:SS) ----------
-            function formatNow() {
-                const d = new Date();
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                const hours = String(d.getHours()).padStart(2, '0');
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const seconds = String(d.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    async function copyToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext !== false) {
+            try { await navigator.clipboard.writeText(text); return true; } catch { return fallbackCopy(text); }
+        } else { return fallbackCopy(text); }
+    }
+    function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed'; textarea.style.top = '-9999px'; textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch(e) { console.warn(e); }
+        document.body.removeChild(textarea);
+        return ok;
+    }
+
+    async function handleCopy(btn, url, name) {
+        btn.style.transform = 'scale(0.97)';
+        setTimeout(() => { if (btn) btn.style.transform = ''; }, 120);
+        const success = await copyToClipboard(url);
+        if (success) {
+            showToast(`“${name}” 链接已复制`, true);
+            btn.classList.add('copied-flash');
+            setTimeout(() => btn.classList.remove('copied-flash'), 280);
+            const iconSpan = btn.querySelector('.btn-icon');
+            if (iconSpan && !btn.dataset.reverting) {
+                const original = iconSpan.innerText;
+                iconSpan.innerText = '✔️';
+                btn.dataset.reverting = 'true';
+                setTimeout(() => { if (iconSpan) iconSpan.innerText = original; btn.dataset.reverting = ''; }, 800);
             }
+        } else { showToast(`复制失败，可手动复制`, false); btn.style.animation = 'shake 0.3s ease'; setTimeout(() => { if(btn) btn.style.animation = ''; }, 400); }
+    }
 
-            // ---------- 更新时间显示 (仅当模式为time时更新内容) ----------
-            function updateTimeDisplay() {
-                if (currentMode === 'time') {
-                    copyToast.textContent = `🕒 当前时间：${formatNow()}`;
-                }
-            }
+    function renderButtons(containerId, items) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        items.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            const iconChar = iconMap[item.name] || defaultIcon;
+            btn.innerHTML = `<span class="btn-icon">${iconChar}</span><span class="btn-text">${item.name}</span>`;
+            btn.addEventListener('click', (e) => { e.preventDefault(); handleCopy(btn, item.url, item.name); });
+            btn.title = `复制链接: ${item.url}`;
+            container.appendChild(btn);
+        });
+    }
 
-            // ---------- 停止所有定时器 (时钟 + 恢复定时器) ----------
-            function stopAllTimers() {
-                if (timeInterval) {
-                    clearInterval(timeInterval);
-                    timeInterval = null;
-                }
-                if (restoreTimer) {
-                    clearTimeout(restoreTimer);
-                    restoreTimer = null;
-                }
-            }
+    // 面板切换
+    const selectorDiv = document.getElementById('selectorPanel');
+    const quarkDiv = document.getElementById('quarkPanel');
+    const feijipanDiv = document.getElementById('feijipanPanel');
+    const activationDiv = document.getElementById('activationPanel');
+    function showSelector() { selectorDiv.style.display = 'block'; quarkDiv.style.display = 'none'; feijipanDiv.style.display = 'none'; activationDiv.style.display = 'none'; stopActivationClock(); }
+    function showQuark() { selectorDiv.style.display = 'none'; quarkDiv.style.display = 'block'; feijipanDiv.style.display = 'none'; activationDiv.style.display = 'none'; stopActivationClock(); if(document.getElementById('quarkButtonGrid').children.length === 0) renderButtons('quarkButtonGrid', quarkItems); }
+    function showFeijipan() { selectorDiv.style.display = 'none'; quarkDiv.style.display = 'none'; feijipanDiv.style.display = 'block'; activationDiv.style.display = 'none'; stopActivationClock(); if(document.getElementById('feijipanButtonGrid').children.length === 0) renderButtons('feijipanButtonGrid', feijipanItems); }
+    function showActivation() { selectorDiv.style.display = 'none'; quarkDiv.style.display = 'none'; feijipanDiv.style.display = 'none'; activationDiv.style.display = 'block'; startActivationClock(); }
 
-            // ---------- 启动时钟 (只有处于time模式才会真正刷新) ----------
-            function startClock() {
-                stopAllTimers();
-                updateTimeDisplay();                    // 立即显示
-                timeInterval = setInterval(updateTimeDisplay, 1000);
-            }
+    document.getElementById('chooseQuark').addEventListener('click', showQuark);
+    document.getElementById('chooseFeijipan').addEventListener('click', showFeijipan);
+    document.getElementById('chooseActivation').addEventListener('click', showActivation);
+    document.getElementById('backFromQuark').addEventListener('click', showSelector);
+    document.getElementById('backFromFeijipan').addEventListener('click', showSelector);
+    document.getElementById('backFromActivation').addEventListener('click', showSelector);
 
-            // ---------- 恢复时间显示模式 (3秒后调用) ----------
-            function restoreTimeMode() {
-                copyToast.classList.remove('success', 'error');
-                currentMode = 'time';
-                updateTimeDisplay();
-                restoreTimer = null;
-                if (!timeInterval) {
-                    startClock();
-                }
-            }
+    // ----------------------------- 激活码生成器核心 (完全保留原算法) -----------------------------
+    const FIXED_KEY = 9411741;
+    let currentActivationKey = 'Format2044153997';   // 旧密钥默认
+    // DOM 激活码相关
+    const machineIdInput = document.getElementById('machineIdInput');
+    const customDaysInput = document.getElementById('customDaysInput');
+    const generateBtn = document.getElementById('activationGenerateBtn');
+    const resultDisplay = document.getElementById('activationResultDisplay');
+    const keySelectors = document.querySelectorAll('#keySelectorsAct .selector');
+    const daysQuickBtns = document.querySelectorAll('#daysQuickSelect .selector');
+    const liveClockSpan = document.getElementById('liveClockBar');
 
-            // ---------- 显示临时提示 (覆盖时间) 并设置3秒返回 ----------
-            function showTemporaryMessage(message, isError = false) {
-                if (restoreTimer) clearTimeout(restoreTimer);
-                currentMode = 'toast';
-                copyToast.textContent = message;
-                copyToast.classList.remove('success', 'error');
-                copyToast.classList.add(isError ? 'error' : 'success');
-                restoreTimer = setTimeout(() => {
-                    restoreTimeMode();
-                }, 3000);
-            }
+    // 时钟控制
+    let activationClockInterval = null;
+    function updateClockDisplay() {
+        if (liveClockSpan) {
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+            liveClockSpan.innerHTML = `🕒 当前时间：${timeStr}`;
+        }
+    }
+    function startActivationClock() {
+        if (activationClockInterval) clearInterval(activationClockInterval);
+        updateClockDisplay();
+        activationClockInterval = setInterval(updateClockDisplay, 1000);
+    }
+    function stopActivationClock() {
+        if (activationClockInterval) { clearInterval(activationClockInterval); activationClockInterval = null; }
+    }
 
-            // ---------- 密码验证 (正确后显示生成器，启动时钟) ----------
-            const CORRECT_PASSWORD = "199612";
+    // 生成激活码 (基于当前密钥)
+    function generateActivationCode() {
+        const idStr = machineIdInput.value.trim();
+        if (!idStr) return '';
+        const idVal = parseInt(idStr, 10);
+        if (isNaN(idVal)) return '';
+        let daysVal = customDaysInput.value.trim() === '' ? 0 : parseInt(customDaysInput.value, 10);
+        if (isNaN(daysVal) || daysVal < 0) daysVal = 0;
+        const i3 = Math.floor(idVal / 2) + FIXED_KEY;
+        const i3Hex = i3.toString(16);
+        let plainText = i3Hex;
+        if (daysVal > 0) {
+            plainText = i3Hex + 'z' + (daysVal * 86400000);
+        }
+        const key = CryptoJS.enc.Utf8.parse(currentActivationKey);
+        const encrypted = CryptoJS.AES.encrypt(plainText, key, {
+            mode: CryptoJS.mode.ECB,
+            padding: CryptoJS.pad.Pkcs7
+        });
+        return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+    }
 
-            passwordSubmit.addEventListener('click', function() {
-                const entered = passwordInput.value;
-                if (entered === CORRECT_PASSWORD) {
-                    passwordSection.classList.add('hidden');
-                    generatorSection.classList.remove('hidden');
-                    passwordError.textContent = '';
+    // 生成并复制 (使用全局toast)
+    async function handleGenerateAndCopy() {
+        const code = generateActivationCode();
+        if (!code) {
+            resultDisplay.textContent = '⚠️ 请输入有效的机器码ID';
+            showToast('机器码无效，请填写数字ID', false);
+            return;
+        }
+        resultDisplay.textContent = code;
+        const copySuccess = await copyToClipboard(code);
+        if (copySuccess) {
+            showToast('激活码已复制到剪贴板', true);
+            // 给结果区域一点高亮反馈
+            resultDisplay.style.transition = '0.1s';
+            resultDisplay.style.backgroundColor = '#c8e6c0';
+            setTimeout(() => { if (resultDisplay) resultDisplay.style.backgroundColor = ''; }, 300);
+        } else {
+            showToast('复制失败，请手动复制激活码', false);
+        }
+    }
 
-                    copyToast.classList.remove('hidden');
-                    currentMode = 'time';
-                    copyToast.classList.remove('success', 'error');
-                    startClock();
+    // 天数快捷绑定与高亮
+    function removeDaysActive() { daysQuickBtns.forEach(btn => btn.classList.remove('active')); }
+    function setDaysActiveByValue(dayVal) {
+        removeDaysActive();
+        const num = parseInt(dayVal, 10);
+        if (isNaN(num)) return;
+        daysQuickBtns.forEach(btn => {
+            if (parseInt(btn.dataset.days, 10) === num) btn.classList.add('active');
+        });
+    }
+    function syncDaysFromInput() {
+        const raw = customDaysInput.value.trim();
+        if (raw === '') setDaysActiveByValue(0);
+        else { const num = parseInt(raw,10); if(!isNaN(num) && num>=0) setDaysActiveByValue(num); else removeDaysActive(); }
+    }
+    // 密钥高亮
+    function setActiveKeyButton(keyStr) {
+        keySelectors.forEach(btn => {
+            if (btn.dataset.key === keyStr) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
 
-                    idInput.focus();
-                    resultDisplay.textContent = '🌱 输入ID，点击生成';
-                } else {
-                    passwordError.textContent = '❌ 密码错误，请重新输入';
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                }
+    // 事件绑定 (只绑定一次)
+    function bindActivationEvents() {
+        // 天数快捷按钮
+        daysQuickBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                customDaysInput.value = btn.dataset.days;
+                syncDaysFromInput();
             });
-
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    passwordSubmit.click();
-                }
+        });
+        customDaysInput.addEventListener('input', syncDaysFromInput);
+        // 密钥切换
+        keySelectors.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newKey = btn.dataset.key;
+                if (newKey === currentActivationKey) return;
+                currentActivationKey = newKey;
+                setActiveKeyButton(currentActivationKey);
+                showToast(`已切换至${btn.innerText}`, true);
             });
+        });
+        generateBtn.addEventListener('click', handleGenerateAndCopy);
+        machineIdInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') generateBtn.click(); });
+        customDaysInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') generateBtn.click(); });
+    }
 
-            // ---------- 激活码生成函数 ----------
-            function generateActivationCode() {
-                const idStr = idInput.value.trim();
-                if (idStr === '') return '';
+    // 初始化激活码面板默认状态
+    function initActivationPanel() {
+        bindActivationEvents();
+        customDaysInput.value = '1';
+        syncDaysFromInput();
+        setActiveKeyButton(currentActivationKey);
+        resultDisplay.textContent = '🌱 输入机器码，点击生成';
+        machineIdInput.value = '';
+        // 默认时钟未启动，等面板显示时启动
+        if (activationDiv.style.display === 'block') startActivationClock();
+        else stopActivationClock();
+    }
 
-                const idVal = parseInt(idStr, 10);
-                if (isNaN(idVal)) return '';
+    // 监听面板显示状态: 利用 MutationObserver 或 在showActivation里启动时钟，但showActivation已调用start
+    // 另外当从其他面板返回激活码面板时，时钟重新启动，离开时stop。完美。
+    // 页面加载时初始化网盘预渲染（可选）和激活码
+    renderButtons('quarkButtonGrid', quarkItems);
+    renderButtons('feijipanButtonGrid', feijipanItems);
+    initActivationPanel();
+    // 初始显示选择面板，确保激活码时钟停止
+    stopActivationClock();
 
-                let daysVal = daysInput.value.trim() === '' ? 0 : parseInt(daysInput.value, 10);
-                if (isNaN(daysVal) || daysVal < 0) daysVal = 0;
-
-                const i3 = Math.floor(idVal / 2) + FIXED_KEY;
-                const i3Hex = i3.toString(16);
-
-                let plainText = i3Hex;
-                if (daysVal > 0) {
-                    const millis = daysVal * 86400000;
-                    plainText = i3Hex + 'z' + millis;
-                }
-
-                const encrypted = CryptoJS.AES.encrypt(plainText, KEY, {
-                    mode: CryptoJS.mode.ECB,
-                    padding: CryptoJS.pad.Pkcs7
-                });
-
-                return encrypted.ciphertext.toString(CryptoJS.enc.Hex);
-            }
-
-            // ---------- 复制到剪贴板 ----------
-            function copyToClipboard(text) {
-                return navigator.clipboard.writeText(text);
-            }
-
-            // ---------- 生成并复制 (点击主按钮) ----------
-            function updateResultAndCopy() {
-                const code = generateActivationCode();
-                if (code) {
-                    resultDisplay.textContent = code;
-                    copyToClipboard(code)
-                        .then(() => {
-                            showTemporaryMessage('✅ 激活码已复制', false);
-                        })
-                        .catch(() => {
-                            showTemporaryMessage('❌ 复制失败，请手动复制', true);
-                        });
-                } else {
-                    resultDisplay.textContent = '⚠️ 请输入有效ID后生成';
-                }
-            }
-
-            generateBtn.addEventListener('click', updateResultAndCopy);
-
-            // 回车触发生成
-            idInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    generateBtn.click();
-                }
-            });
-
-            // ---------- 高亮管理 (快捷天数) ----------
-            function removeActiveClass() {
-                selectorButtons.forEach(btn => btn.classList.remove('active'));
-            }
-
-            function setActiveByDay(dayValue) {
-                removeActiveClass();
-                if (dayValue === undefined || dayValue === null) return;
-                const numericDay = typeof dayValue === 'number' ? dayValue : parseInt(dayValue, 10);
-                if (isNaN(numericDay)) return;
-
-                selectorButtons.forEach(btn => {
-                    const btnDay = parseInt(btn.dataset.days, 10);
-                    if (btnDay === numericDay) {
-                        btn.classList.add('active');
-                    }
-                });
-            }
-
-            function syncActiveFromInput() {
-                let rawValue = daysInput.value.trim();
-                if (rawValue === '') {
-                    setActiveByDay(0);
-                } else {
-                    const num = parseInt(rawValue, 10);
-                    if (!isNaN(num) && num >= 0) {
-                        setActiveByDay(num);
-                    } else {
-                        removeActiveClass();
-                    }
-                }
-            }
-
-            daysInput.addEventListener('input', syncActiveFromInput);
-
-            // 快捷按钮仅修改天数和高亮
-            selectorButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const days = this.dataset.days;
-                    daysInput.value = days;
-                    syncActiveFromInput();
-                });
-            });
-
-            // 初始化默认1天高亮
-            daysInput.value = '1';
-            setActiveByDay(1);
-        })();
-    </script>
+    // 添加震动动画样式
+    const shakeStyle = document.createElement('style');
+    shakeStyle.textContent = `@keyframes shake { 0% { transform: translateX(0px); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } 100% { transform: translateX(0px); } }`;
+    document.head.appendChild(shakeStyle);
+</script>
 </body>
 </html>
